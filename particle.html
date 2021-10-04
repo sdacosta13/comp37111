@@ -1,0 +1,112 @@
+<html>
+  <head>
+    <style>
+      body {
+        margin 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import * as THREE from "https://web.cs.manchester.ac.uk/three/three.js-master/build/three.module.js";
+      import { OrbitControls } from "https://web.cs.manchester.ac.uk/three/three.js-master/examples/jsm/controls/OrbitControls.js";
+      var camera, scene, renderer;
+      var particles = new Array(10);
+      var clock = 0.0;
+      var MAXPOINTS = 1000;
+      var TOTAL = 20;
+      var dt= 0.01; // timestep.
+      function init(){
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 0, 400);
+        camera.lookAt(0,0,0);
+        renderer = new THREE.WebGLRenderer();
+        renderer.setClearColor(0x000000, 1.0);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+        var controls = new OrbitControls(camera, renderer.domElement);
+        controls.autoRotate = true;
+        setReferenceSquare();
+        particles = new Array(TOTAL);
+        for(let i = 0; i < TOTAL; i++){
+          particles[i] = new Particle();
+          console.log(particles[i].velocity.x);
+          console.log(particles[i].velocity.y);
+          console.log(particles[i].velocity.z);
+          console.log("");
+        }
+      }
+      function setReferenceSquare(){
+        var geometry = new THREE.PlaneGeometry(100,100);
+        var material = new THREE.MeshBasicMaterial({color: 0x325ca8});
+        var mesh = new THREE.Mesh(geometry, material);
+        mesh.rotateOnAxis(new THREE.Vector3(1,0,0), -0.5 * Math.PI);
+        var axes = new THREE.AxesHelper(30);
+        scene.add(axes);
+        scene.add(mesh);
+      }
+      function animate(){
+        requestAnimationFrame(animate);
+        update();
+        renderer.render(scene, camera);
+        clock += dt;
+      }
+      function remove(obj){
+        var removethis = scene.getObjectByName(obj.name);
+        scene.remove(removethis);
+      }
+      function update(){
+        clock += dt;
+        for(let i = 0; i < TOTAL; i++){
+          particles[i].update(clock);
+        }
+      }
+      function randomint(a,b){
+        return Math.floor(Math.random() * (a - b + 1) + b)
+      }
+      class Particle{
+        constructor(){
+          this.setRandomVelocity();
+          this.sphereGeometry = new THREE.SphereGeometry(1,32,16);
+          this.sphereMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000});
+          this.mesh = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
+          this.setRandomPosition();
+          scene.add(this.mesh);
+        }
+        setRandomVelocity(){
+          var magnitude = randomint(1,50);              //random magnitude
+          var angle1 = randomint(-30, 30) * Math.PI / 180;
+          var angle2 = randomint(0,359) * Math.PI / 180;
+          var x = magnitude * Math.sin(angle1) * Math.cos(angle2);
+          var y = magnitude * Math.cos(angle1);
+          var z = magnitude * Math.sin(angle1) * Math.sin(angle2);
+          this.velocity = new THREE.Vector3(x,y,z);
+        }
+        setRandomPosition(){
+          var x = randomint(0,10);
+          var y = 0;
+          var z = randomint(0,10);
+          this.mesh.position.copy(new THREE.Vector3(x,y,z));
+        }
+        update(time){
+          var mag = this.velocity.length();
+          var alpha = Math.tanh(this.velocity.z / this.velocity.x);
+          var x = mag * time * Math.sqrt(1 + (this.velocity.y ** 2 / mag ** 2)) * Math.sin(alpha);
+          var y = mag * time * (this.velocity.y / mag) - (0.5 * 9.8 * time * time);
+          var z = mag * time * Math.sqrt(1 + (this.velocity.y ** 2 / mag ** 2)) * Math.cos(alpha);
+          this.mesh.position.setX(x);
+          this.mesh.position.setY(y);
+          this.mesh.position.setZ(z);
+        }
+      }
+      try{
+        init();
+        animate();
+      } catch (err){
+        alert(err.message);
+      }
+    </script>
+  </body>
+</html>
