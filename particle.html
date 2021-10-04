@@ -15,6 +15,10 @@
       var particles = new Array(10);
       var clock = 0.0;
       var MAXPOINTS = 1000;
+      var DEBUG = false;
+      var GRAVITY = 9.8;
+      var GRAVITY_MULTIPLIER = 1;
+      var NUM_TRAIL = 8;
       var TOTAL = 20;
       var dt= 0.01; // timestep.
       function init(){
@@ -32,11 +36,15 @@
         particles = new Array(TOTAL);
         for(let i = 0; i < TOTAL; i++){
           particles[i] = new Particle();
+          if(DEBUG){
           console.log(particles[i].velocity.x);
           console.log(particles[i].velocity.y);
           console.log(particles[i].velocity.z);
           console.log("");
+          }
         }
+
+
       }
       function setReferenceSquare(){
         var geometry = new THREE.PlaneGeometry(100,100);
@@ -66,39 +74,76 @@
       function randomint(a,b){
         return Math.floor(Math.random() * (a - b + 1) + b)
       }
+      class Trail{
+        constructor(){
+          this.trailArray = new Array(NUM_TRAIL);
+          this.nodes = 0;
+          this.timeSinceLastUpdate = clock;
+          this.timeSkip = 0.5;
+        }
+        update(pos){
+          if(clock > this.timeSinceLastUpdate + this.timeSkip){
+            this.timeSinceLastUpdate = clock;
+            this.trailArray.push(this.createNode(pos));
+            this.nodes += 1;
+            if(this.nodes == NUM_TRAIL){
+              var removeNode = this.trailArray.shift();
+              scene.remove(removeNode);
+                this.nodes -= 1;
+            }
+          }
+        }
+        createNode(pos){
+          var sphereGeo = new THREE.SphereGeometry(4,32,16);
+          var sphereMat = new THREE.MeshBasicMaterial({color: 0xFF0000});
+          var mesh = new THREE.Mesh(sphereGeo, sphereMat);
+          mesh.position.copy(pos);
+          scene.add(mesh);
+          return mesh;
+        }
+      }
       class Particle{
         constructor(){
           this.setRandomVelocity();
-          this.sphereGeometry = new THREE.SphereGeometry(1,32,16);
+          this.sphereGeometry = new THREE.SphereGeometry(8,32,16);
           this.sphereMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000});
           this.mesh = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
           this.setRandomPosition();
           scene.add(this.mesh);
+          this.trail = new Trail();
         }
         setRandomVelocity(){
-          var magnitude = randomint(1,50);              //random magnitude
-          var angle1 = randomint(-30, 30) * Math.PI / 180;
+          var magnitude = randomint(100,200);              //random magnitude
+          var angle1 = randomint(60, 90) * Math.PI / 180;
           var angle2 = randomint(0,359) * Math.PI / 180;
-          var x = magnitude * Math.sin(angle1) * Math.cos(angle2);
-          var y = magnitude * Math.cos(angle1);
-          var z = magnitude * Math.sin(angle1) * Math.sin(angle2);
-          this.velocity = new THREE.Vector3(x,y,z);
+          var x = magnitude * Math.cos(angle1);
+          var y = magnitude * Math.sin(angle1);
+          var tempVec = new THREE.Vector3(x,y,0);
+          this.velocity = tempVec.applyAxisAngle(new THREE.Vector3(0,1,0), angle2); // rotate 2D vector
+          if(DEBUG){
+            var dotgeo = new THREE.SphereGeometry(1,32,16);
+            var dotmesh = new THREE.Mesh(dotgeo, this.sphereMaterial);
+            dotmesh.position.copy(this.velocity);
+            scene.add(dotmesh);
+          }
         }
         setRandomPosition(){
-          var x = randomint(0,10);
+          var x = randomint(0,100);
           var y = 0;
-          var z = randomint(0,10);
+          var z = randomint(0,100);
           this.mesh.position.copy(new THREE.Vector3(x,y,z));
         }
         update(time){
-          var mag = this.velocity.length();
-          var alpha = Math.tanh(this.velocity.z / this.velocity.x);
-          var x = mag * time * Math.sqrt(1 + (this.velocity.y ** 2 / mag ** 2)) * Math.sin(alpha);
-          var y = mag * time * (this.velocity.y / mag) - (0.5 * 9.8 * time * time);
-          var z = mag * time * Math.sqrt(1 + (this.velocity.y ** 2 / mag ** 2)) * Math.cos(alpha);
+          var angle_xy = Math.tanh(this.velocity.y / this.velocity.x);
+          var angle_zy = Math.tanh(this.velocity.y / this.velocity.z);
+          var x = this.velocity.x * time * Math.cos(angle_xy);
+          var z = this.velocity.z * time * Math.cos(angle_zy);
+          var angle_y = Math.tanh(this.velocity.y / Math.sqrt((this.velocity.x ** 2) + (this.velocity.z ** 2)));
+          var y = this.velocity.y * time * Math.sin(angle_y) - (0.5) * (GRAVITY * GRAVITY_MULTIPLIER) * time * time;
           this.mesh.position.setX(x);
           this.mesh.position.setY(y);
           this.mesh.position.setZ(z);
+          this.trail.update(this.mesh.position);
         }
       }
       try{
