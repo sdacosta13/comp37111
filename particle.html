@@ -18,8 +18,9 @@
       var DEBUG = false;
       var GRAVITY = 9.8;
       var GRAVITY_MULTIPLIER = 1;
+      var NUM_EXPLOSION = 100;
       var NUM_TRAIL = 8;
-      var TOTAL = 20;
+      var TOTAL = 1;
       var dt= 0.01; // timestep.
       function init(){
         scene = new THREE.Scene();
@@ -35,7 +36,7 @@
         setReferenceSquare();
         particles = new Array(TOTAL);
         for(let i = 0; i < TOTAL; i++){
-          particles[i] = new Particle();
+          particles[i] = new Particle(true);
           if(DEBUG){
           console.log(particles[i].velocity.x);
           console.log(particles[i].velocity.y);
@@ -75,11 +76,11 @@
         return Math.floor(Math.random() * (a - b + 1) + b)
       }
       class Trail{
-        constructor(){
-          this.trailArray = new Array(NUM_TRAIL);
+        constructor(trail_length, timeskip){
+          this.trailArray = new Array(trail_length);
           this.nodes = 0;
           this.timeSinceLastUpdate = clock;
-          this.timeSkip = 0.5;
+          this.timeSkip = timeskip;
         }
         update(pos){
           if(clock > this.timeSinceLastUpdate + this.timeSkip){
@@ -101,16 +102,39 @@
           scene.add(mesh);
           return mesh;
         }
+        fade(){
+          if(clock > this.timeSinceLastUpdate + this.timeSkip){
+            this.timeSinceLastUpdate = clock;
+            this.nodes += 1;
+            if(this.nodes == NUM_TRAIL){
+              var removeNode = this.trailArray.shift();
+              scene.remove(removeNode);
+                this.nodes -= 1;
+            }
+          }
+        }
       }
       class Particle{
-        constructor(){
-          this.setRandomVelocity();
+        constructor(primary, pos = null, vel = null){
           this.sphereGeometry = new THREE.SphereGeometry(8,32,16);
           this.sphereMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000});
           this.mesh = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
-          this.setRandomPosition();
+          this.secondarytrails = null;
+          if(vel == null){
+            this.setRandomVelocity();
+          } else {
+            this.velocity = vel;
+          }
           scene.add(this.mesh);
-          this.trail = new Trail();
+          if(pos == null){
+            this.setRandomPosition();
+          } else {
+            this.mesh.position.copy(pos);
+          }
+          this.trail = new Trail(8, 0.5);
+          this.ttl = clock + randomint(500,800)/100;
+          this.alive = true;
+          this.primary = primary;
         }
         setRandomVelocity(){
           var magnitude = randomint(100,200);              //random magnitude
@@ -134,16 +158,55 @@
           this.mesh.position.copy(new THREE.Vector3(x,y,z));
         }
         update(time){
-          var angle_xy = Math.tanh(this.velocity.y / this.velocity.x);
-          var angle_zy = Math.tanh(this.velocity.y / this.velocity.z);
-          var x = this.velocity.x * time * Math.cos(angle_xy);
-          var z = this.velocity.z * time * Math.cos(angle_zy);
-          var angle_y = Math.tanh(this.velocity.y / Math.sqrt((this.velocity.x ** 2) + (this.velocity.z ** 2)));
-          var y = this.velocity.y * time * Math.sin(angle_y) - (0.5) * (GRAVITY * GRAVITY_MULTIPLIER) * time * time;
-          this.mesh.position.setX(x);
-          this.mesh.position.setY(y);
-          this.mesh.position.setZ(z);
-          this.trail.update(this.mesh.position);
+          if((time > this.ttl) && this.alive){ // runs once per particle
+            scene.remove(this.mesh);
+            this.alive = false;
+            this.trail.fade();
+            if(this.primary){
+              this.generateExplosion();
+            }
+
+          } else if(!this.alive && this.primary){
+            this.trail.fade();
+            for(var i = 0; i < NUM_EXPLOSION; i++){
+              this.secondarytrails[i].update(time);
+            }
+
+          } else if(!this.alive && !this.primary){
+            this.trail.fade();
+          }
+          if(this.alive) {
+            var angle_xy = Math.tanh(this.velocity.y / this.velocity.x);
+            var angle_zy = Math.tanh(this.velocity.y / this.velocity.z);
+            var x = this.velocity.x * time * Math.cos(angle_xy);
+            var z = this.velocity.z * time * Math.cos(angle_zy);
+            var angle_y = Math.tanh(this.velocity.y / Math.sqrt((this.velocity.x ** 2) + (this.velocity.z ** 2)));
+            var y = this.velocity.y * time * Math.sin(angle_y) - (0.5) * (GRAVITY * GRAVITY_MULTIPLIER) * time * time;
+            this.mesh.position.setX(x);
+            this.mesh.position.setY(y);
+            this.mesh.position.setZ(z);
+            this.trail.update(this.mesh.position);
+          }
+        }
+        generateExplosion(){
+
+          //This section is adapted off a technique found at
+          //https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
+          var points = new Array(NUM_EXPLOSION);
+          var golden = Math.PI * (3.0 - Math.sqrt(5.0));
+          for(var i = 0; i < NUM_EXPLOSION; i++){
+            var y = 1.0 - ((i / (NUM_EXPLOSION - 1)) * 2);
+            var rad = Math.sqrt(1 - (y * y));
+            var theta = golden * i
+            var x = Math.cos(theta) * rad;
+            var z = Math.sin(theta) * rad;
+            points[i] = new THREE.Vector3(x,y,z);
+            points[i] = points[i].multiplyScalar(10);
+          }
+          this.secondarytrails = new Array(NUM_EXPLOSION);
+          for(i = 0; i < NUM_EXPLOSION; i++){
+            this.secondarytrails[i] = new Particle(false, this.mesh.position, points[i]);
+          }
         }
       }
       try{
