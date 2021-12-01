@@ -60,7 +60,7 @@ public class Particle
     }
     public void SetRandomVel()
     {
-        float mag = Random.Range(100, 200) * Constants.MAGNITUDE;
+        float mag = Random.Range(100, 200) * (((float) Constants.MAGNITUDE)/100f);
         float angle1 = Random.Range(60, 90) * Mathf.PI / 180;
         float angle2 = Random.Range(0, 359) * Mathf.PI / 180;
         float x = mag * Mathf.Cos(angle1);

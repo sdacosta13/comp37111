@@ -34,7 +34,7 @@ public class ParticleSystemComp : MonoBehaviour
                 {
                     if (ps[fireworkIndex].replaceable)
                     {
-                        for(int i = 0; i < Constants.NUM_EXPLOSION; i++)
+                        for(int i = 0; i < ps[fireworkIndex].trails.Count; i++)
                         {
                             Destroy(ps[fireworkIndex].trails[i].sphere);
                         }
