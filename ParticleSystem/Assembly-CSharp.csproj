@@ -56,12 +56,13 @@
     <Analyzer Include="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\Microsoft\Visual Studio Tools for Unity\Analyzers\Microsoft.Unity.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\UIHandler.cs" />
     <Compile Include="Assets\Scripts\Trail.cs" />
     <Compile Include="Assets\Scripts\ParticleSystemComp.cs" />
     <Compile Include="Assets\Scripts\Constants.cs" />
+    <Compile Include="Assets\Scripts\MeshCreator.cs" />
     <Compile Include="Assets\Scripts\Particle.cs" />
     <Compile Include="Assets\Scripts\CameraControls.cs" />
-    <Compile Include="Assets\Scripts\MeshCreator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

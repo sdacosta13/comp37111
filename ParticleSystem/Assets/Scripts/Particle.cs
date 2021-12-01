@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -9,13 +10,25 @@ public class Particle
     Vector3 vel;
     public float ttl;
     bool alive = true;
-    public GameObject sphere = MeshCreator.GenerateLowPolySphere();
+    //public GameObject sphere = MeshCreator.GenerateLowPolySphere();
+    //public GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+    public GameObject sphere = setupSphere();
     public List<Trail> trails = new List<Trail>();
     Vector3 initialDisplacement;
     Vector3 initialVelocity;
     public float timeStart;
     public bool replaceable = false;
     float lastUpdate = Time.time;
+    public static Mesh m = (Mesh)AssetDatabase.LoadAssetAtPath("Assets/LowPolySphere.asset", typeof(Mesh));
+    public static GameObject setupSphere()
+    {
+        GameObject sphere = new GameObject();
+        sphere.AddComponent<MeshFilter>();
+        sphere.GetComponent<MeshFilter>().mesh = m;
+        sphere.AddComponent<MeshRenderer>();
+        return sphere;
+    }
+    
     public Particle(float _ttl)
     {
         ttl = _ttl;

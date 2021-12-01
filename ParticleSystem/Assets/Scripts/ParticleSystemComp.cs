@@ -40,7 +40,8 @@ public class ParticleSystemComp : MonoBehaviour
                         }
                         Destroy(ps[fireworkIndex].sphere);
                         ps[fireworkIndex] = null;
-                    }
+                        Resources.UnloadUnusedAssets(); // Used to cleanup references to dead partices
+                    }                                   // Removal causes memory leak
                 }
             }
 

@@ -1,13 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
-public class MeshCreator
+public class MeshCreator : MonoBehaviour
 {
     // Generates a very low poly sphere mesh
     public static GameObject GenerateLowPolySphere()
     {
-        Vector3[] verts = new Vector3[]
+        Mesh mesh = new Mesh();
+        mesh.vertices = new Vector3[]
         {
             new Vector3(1,1,1),
             new Vector3(1,-1,1),
@@ -24,7 +26,7 @@ public class MeshCreator
             new Vector3(-1,1,-1),
             new Vector3(0,0,-1.75f)
         };
-        int[] tris = new int[]
+        mesh.triangles = new int[]
         {
             0,1,4,
             4, 1, 2,
@@ -56,14 +58,18 @@ public class MeshCreator
             1,2,6,
             2,6,11
         };
-        Mesh mesh = new Mesh();
-        mesh.vertices = verts;
-        mesh.triangles = tris;
+        
         GameObject lowPolySphere = new GameObject();
         lowPolySphere.AddComponent<MeshRenderer>();
         lowPolySphere.AddComponent<MeshFilter>();
         lowPolySphere.GetComponent<MeshFilter>().mesh = mesh;
         lowPolySphere.GetComponent<MeshRenderer>().material = new Material(Shader.Find("Diffuse"));
         return lowPolySphere;
+    }
+    public void Start()
+    {
+        GameObject sphere = GenerateLowPolySphere();
+        
+        AssetDatabase.CreateAsset(sphere.GetComponent<MeshFilter>().mesh, "Assets/LowPolySphere.asset"); ;
     }
 }
