@@ -1,33 +1,142 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Particle
 {
     Vector3 vel;
-    int ttl;
+    public int ttl;
     bool alive = true;
-    GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-    public Particle(Vector3 _pos, Vector3 _vel, int _ttl)
+    public GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+    List<Trail> trails = new List<Trail>();
+    Vector3 initialDisplacement;
+    Vector3 initialVelocity;
+    public float timeStart;
+    public bool replaceable = false;
+    public Particle(int _ttl)
     {
-        vel = _vel;
         ttl = _ttl;
-        sphere.transform.position = _pos;
-        sphere.GetComponent<Renderer>().material.color = new Color(Random.Range(0, 255), 
-                                                                   Random.Range(0, 255),
-                                                                   Random.Range(0, 255));
-    }      
-    public void Update(float time)
+        SetRandomPos();
+        SetRandomVel();
+        GeneralParticleSetup();
+    }
+    public Particle(int _ttl, Vector3 _pos, Vector3 _vel)
+    {
+        ttl = _ttl;
+        this.sphere.transform.position = _pos;
+        initialDisplacement = _pos;
+        initialVelocity = _vel;
+        vel = _vel;
+        GeneralParticleSetup();
+    }
+    public void GeneralParticleSetup()
+    {
+        timeStart = Time.time;
+        sphere.GetComponent<Renderer>().material.SetColor("_Color", Particle.GetRandomColor());
+        ttl += Random.Range(-Constants.TTLVariation, Constants.TTLVariation);
+    }
+    public void SetRandomPos()
+    {
+        sphere.transform.position = new Vector3(0, 0, 0);
+        initialDisplacement = new Vector3(0, 0, 0);
+    }
+    public void SetRandomVel()
+    {
+        float mag = Random.Range(100, 200) * Constants.MAGNITUDE;
+        float angle1 = Random.Range(60, 90) * Mathf.PI / 180;
+        float angle2 = Random.Range(0, 359) * Mathf.PI / 180;
+        float x = mag * Mathf.Cos(angle1);
+        float y = mag * Mathf.Sin(angle1);
+        Vector3 temp = new Vector3(x, y, 0);
+        vel = Quaternion.AngleAxis(angle2, Vector3.up) * temp;
+        initialVelocity = vel;
+        //Debug.Log(String.Format("{0} {1} {2}", vel.x, vel.y, vel.z));
+    }
+    public void GenerateExplosion()
+    {
+        //This section is adapted off a technique found at
+        //https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
+
+        float gold = Mathf.PI * (3 - Mathf.Sqrt(5f));
+        for (int i = 0; i < Constants.NUM_EXPLOSION; i++)
+        {
+            float y = 1f - (((float)i / (float)(Constants.NUM_EXPLOSION - 1f)) * 2f);
+            float rad = (float)Math.Sqrt(1f - (y * y));
+            float theta = gold * (float)i;
+            float x = (float)Mathf.Cos(theta) * rad;
+            float z = (float)Mathf.Sin(theta) * rad;
+            Vector3 point = new Vector3(x, y, z) * Constants.EXPLOSION_SIZE;
+            trails.Add(new Trail(Constants.TrailLength, sphere.transform.position, point));
+            //Debug.Log(String.Format("{0} {1} {2}", point.x, point.y, point.z));
+        }
+    }
+    public void PerformPhysicsCalc(float time)
+    {
+        float x = initialVelocity.x * time + initialDisplacement.x;
+        float y = (initialVelocity.y * time + initialDisplacement.y) - (0.5f)*(Constants.GRAVITY * Constants.GRAVITY_MULTIPLIER)*(time)*(time);
+        float z = initialVelocity.z * time + initialDisplacement.z;
+        sphere.transform.position = new Vector3(x, y, z);
+    }
+    public virtual void Update()
     {
         if(ttl > 0 && alive)
         {
-            float angle_xy = Mathf.Atan2(this.vel.y, this.vel.x);
-            float angle_zy = Mathf.Atan2(this.vel.y, this.vel.z);
-            float x = this.vel.x * time * Mathf.Cos(angle_xy);
-            float z = this.vel.z * time * Mathf.Cos(angle_zy);
-            float angle_y = Mathf.Atan2(this.vel.y, Mathf.Sqrt(Mathf.Pow(this.vel.x, 2) + Mathf.Pow(this.vel.z, 2)));
-            float y = this.vel.y * time * Mathf.Sin(angle_y) - (0.5f * (Constants.GRAVITY * Constants.GRAVITY_MULTIPLIER) * time * time);
-            sphere.transform.position.Set(x, y, z);
+            
+            ttl = ttl - 1;
+            float time = Time.time - timeStart;
+            PerformPhysicsCalc(time);
+            //Debug.Log(String.Format("{0} {1} {2}", x,y, z));   
         }
+        else if(alive)
+        {
+            GenerateExplosion();
+            alive = false;
+        }
+        else
+        {
+            bool trailsDead = true;
+            sphere.GetComponent<Renderer>().enabled = false;
+            for (int i = 0; i < trails.Count; i++)
+            {
+                trails[i].Update();
+                if(trails[i].ttl > 0)
+                {
+                    trailsDead = false;
+                }
+            }
+            if (trailsDead)
+            {
+                replaceable = true;
+            }
+
+        }
+        
+    }
+    public static Color GetRandomColor()
+    {
+        int r = Random.Range(0, 4);
+        Color color;
+        switch (r)
+        {
+            case 0:
+                color = new Color(255, 0, 0);
+                break;
+            case 1:
+                color = new Color(255, 102, 0);
+                break;
+            case 2:
+                color = new Color(255, 221, 0);
+                break;
+            case 3:
+                color = new Color(98, 255, 0);
+                break;
+            default:
+            case 4:
+                color = new Color(8, 0, 255);
+                break;
+        }
+        return color;
     }
 }
