@@ -9,9 +9,10 @@ public static class Constants
     public static float MAGNITUDE = 0.2f;
     public static int NUM_EXPLOSION = 100;
     public static float EXPLOSION_SIZE = 20;
-    public static int TrailLength = 300;
-    public static int particleTTL = 600;
-    public static int MAX_FIREWORKS = 30;
-    public static int TTLVariation = 50;
+    public static float TrailLength = 2;
+    public static float particleTTL = 3;
+    public static int MAX_FIREWORKS = 150;
+    public static int TTLVariation = 1;
     public static float FireworkChance = 0.001f;
+    public static float FireworkRate = 0.1f;
 }

@@ -11,32 +11,39 @@ public class ParticleSystemComp : MonoBehaviour
     float startTime;
     float timeElapsed;
     Particle[] ps = new Particle[Constants.MAX_FIREWORKS];
+    float fireworkTimer;
+
     void Start()
     {
-        
+        fireworkTimer = Time.time;
     }
     // Update is called once per frame
     void Update()
     {
-        for(int fireworkIndex = 0; fireworkIndex < Constants.MAX_FIREWORKS; fireworkIndex++)
+        if (Time.time > fireworkTimer + Constants.FireworkRate)
         {
-            if(ps[fireworkIndex] == null)
+            fireworkTimer = Time.time;
+            for (int fireworkIndex = 0; fireworkIndex < Constants.MAX_FIREWORKS; fireworkIndex++)
             {
-                if (Random.Range(0, 99) > Constants.FireworkChance * 100)
+                if(ps[fireworkIndex] == null)
                 {
                     ps[fireworkIndex] = new Particle(Constants.particleTTL);
+                    break;
                 }
-            }
-            else
-            {
-                if (ps[fireworkIndex].replaceable)
+                else
                 {
-                    if (Random.Range(0, 999) > Constants.FireworkChance * 1000)
+                    if (ps[fireworkIndex].replaceable)
                     {
-                        ps[fireworkIndex] = new Particle(Constants.particleTTL);
+                        ps[fireworkIndex].sphere.SetActive(false);
+                        for(int i = 0; i < Constants.NUM_EXPLOSION; i++)
+                        {
+                            ps[fireworkIndex].trails[i].sphere.SetActive(false);
+                        }
+                        ps[fireworkIndex] = null;
                     }
                 }
             }
+
         }
         for(int i = 0; i < ps.Length; i++)
         {

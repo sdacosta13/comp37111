@@ -7,22 +7,23 @@ using Random = UnityEngine.Random;
 public class Particle
 {
     Vector3 vel;
-    public int ttl;
+    public float ttl;
     bool alive = true;
     public GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-    List<Trail> trails = new List<Trail>();
+    public List<Trail> trails = new List<Trail>();
     Vector3 initialDisplacement;
     Vector3 initialVelocity;
     public float timeStart;
     public bool replaceable = false;
-    public Particle(int _ttl)
+    float lastUpdate = Time.time;
+    public Particle(float _ttl)
     {
         ttl = _ttl;
         SetRandomPos();
         SetRandomVel();
         GeneralParticleSetup();
     }
-    public Particle(int _ttl, Vector3 _pos, Vector3 _vel)
+    public Particle(float _ttl, Vector3 _pos, Vector3 _vel)
     {
         ttl = _ttl;
         this.sphere.transform.position = _pos;
@@ -39,8 +40,10 @@ public class Particle
     }
     public void SetRandomPos()
     {
-        sphere.transform.position = new Vector3(0, 0, 0);
-        initialDisplacement = new Vector3(0, 0, 0);
+        int randX = Random.Range(-100, 100);
+        int randZ = Random.Range(-100, 100);
+        sphere.transform.position = new Vector3(randX, 0, randZ);
+        initialDisplacement = new Vector3(randX, 0, randZ);
     }
     public void SetRandomVel()
     {
@@ -58,7 +61,7 @@ public class Particle
     {
         //This section is adapted off a technique found at
         //https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
-
+        sphere.GetComponent<Renderer>().enabled = false;
         float gold = Mathf.PI * (3 - Mathf.Sqrt(5f));
         for (int i = 0; i < Constants.NUM_EXPLOSION; i++)
         {
@@ -81,10 +84,11 @@ public class Particle
     }
     public virtual void Update()
     {
-        if(ttl > 0 && alive)
+        float deltaTime = Time.time - lastUpdate;
+        if(ttl >= 0 && alive)
         {
             
-            ttl = ttl - 1;
+            ttl = ttl - deltaTime;
             float time = Time.time - timeStart;
             PerformPhysicsCalc(time);
             //Debug.Log(String.Format("{0} {1} {2}", x,y, z));   
@@ -92,6 +96,7 @@ public class Particle
         else if(alive)
         {
             GenerateExplosion();
+            sphere.GetComponent<Renderer>().enabled = false;
             alive = false;
         }
         else
@@ -101,7 +106,7 @@ public class Particle
             for (int i = 0; i < trails.Count; i++)
             {
                 trails[i].Update();
-                if(trails[i].ttl > 0)
+                if(trails[i].ttl >= 0)
                 {
                     trailsDead = false;
                 }
@@ -112,31 +117,33 @@ public class Particle
             }
 
         }
-        
+        lastUpdate = Time.time;
     }
     public static Color GetRandomColor()
     {
-        int r = Random.Range(0, 4);
+        int r = Random.Range(0, 256);
         Color color;
-        switch (r)
+        if(r < 50 && r >= 0)
         {
-            case 0:
-                color = new Color(255, 0, 0);
-                break;
-            case 1:
-                color = new Color(255, 102, 0);
-                break;
-            case 2:
-                color = new Color(255, 221, 0);
-                break;
-            case 3:
-                color = new Color(98, 255, 0);
-                break;
-            default:
-            case 4:
-                color = new Color(8, 0, 255);
-                break;
+            color = new Color(255, 0, 0);
         }
+        else if (r < 100 && r >= 50)
+        {
+            color = new Color(255, 102, 0);
+        }
+        else if (r < 150 && r >= 100)
+        {
+            color = new Color(255, 221, 0);
+        }
+        else if(r < 200 && r >= 150)
+        {
+            color = new Color(98, 255, 0);
+        }
+        else
+        {
+            color = new Color(8, 0, 255);
+        }
+        
         return color;
     }
 }
