@@ -9,7 +9,7 @@ public class Particle
     Vector3 vel;
     public float ttl;
     bool alive = true;
-    public GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+    public GameObject sphere = MeshCreator.GenerateLowPolySphere();
     public List<Trail> trails = new List<Trail>();
     Vector3 initialDisplacement;
     Vector3 initialVelocity;

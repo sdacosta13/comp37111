@@ -34,11 +34,11 @@ public class ParticleSystemComp : MonoBehaviour
                 {
                     if (ps[fireworkIndex].replaceable)
                     {
-                        ps[fireworkIndex].sphere.SetActive(false);
                         for(int i = 0; i < Constants.NUM_EXPLOSION; i++)
                         {
-                            ps[fireworkIndex].trails[i].sphere.SetActive(false);
+                            Destroy(ps[fireworkIndex].trails[i].sphere);
                         }
+                        Destroy(ps[fireworkIndex].sphere);
                         ps[fireworkIndex] = null;
                     }
                 }
