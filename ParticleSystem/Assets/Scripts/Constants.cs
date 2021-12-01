@@ -11,7 +11,7 @@ public static class Constants
     public static float EXPLOSION_SIZE = 30;
     public static float TrailLength = 2;
     public static float particleTTL = 3;
-    public static int MAX_FIREWORKS = 200;
+    public static int MAX_FIREWORKS = 100;
     public static int TTLVariation = 1;
     public static float FireworkChance = 0.001f;
     public static float FireworkRate = 0.02f;

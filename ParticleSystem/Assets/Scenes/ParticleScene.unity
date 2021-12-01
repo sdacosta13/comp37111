@@ -1127,7 +1127,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sensitivity: 5
-  movementSpeed: 50
+  movementSpeed: 250
   state: 1
 --- !u!1 &1001612162
 GameObject:
